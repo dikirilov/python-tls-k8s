@@ -1,0 +1,69 @@
+version: "1"
+services:
+  custom-service:
+    image: nginx:alpine-slim
+    volumes:
+      - ./nginx-content:/usr/share/nginx/html
+      - ./certs:/etc/nginx/conf.d/certs
+      - ./nginx-conf/default.conf:/etc/nginx/conf.d/default.conf
+    ports: 
+      - 8443:443
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: '32M'
+  python-urllib:
+    depends_on:
+      - custom-service
+    image: python:3.9-alpine
+    volumes:
+      - ./python-app:/usr/src/app
+      - ./certs:/usr/certs
+    command:
+      - /bin/sh
+      - -c
+      - |
+        python3 /usr/src/app/app3.py 4
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: '32M'
+  python-requests-verify:
+    depends_on: 
+      - custom-service
+    image: python:3.9-alpine
+    volumes: 
+      - ./python-app:/usr/src/app
+      - ./certs:/usr/certs
+    command:
+      - /bin/sh
+      - -c
+      - |
+        pip3 install requests 
+        python3 /usr/src/app/app2.py 2
+    deploy: 
+      resources: 
+        limits:
+          cpus: '0.25'
+          memory: '512M'
+  python-requests-env:
+    depends_on:
+      - custom-service
+    image: python:3.9-alpine
+    volumes:
+      - ./python-app:/usr/src/app
+      - ./certs:/usr/certs
+    command:
+      - /bin/sh
+      - -c
+      - |
+        pip3 install requests
+        export REQUESTS_CA_BUNDLE=/usr/certs/bundle.crt
+        python3 /usr/src/app/app.py 2
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: '512M'
